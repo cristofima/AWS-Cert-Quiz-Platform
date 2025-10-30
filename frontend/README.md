@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AWS Certification Quiz Platform - Frontend
+
+## 🎯 Status: Phase 1 Complete (Foundation)
+
+Built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, and **shadcn/ui**.
 
 ## Getting Started
 
