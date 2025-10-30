@@ -1,4 +1,9 @@
 {
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./.github/nextjs-code-generation-instructions.md"
+    }
+  ],
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": "./.github/git-commit-messages-instructions.md"
