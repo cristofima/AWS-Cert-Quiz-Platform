@@ -1,0 +1,203 @@
+# AWS Certification Quiz Platform - Global .gitignore
+# Frontend-specific ignores (Next.js, Vercel, etc.) are in frontend/.gitignore
+# This file contains project-wide ignores for AWS, Terraform, IDEs, and tooling
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE and Editor Files
+# VS Code workspace settings are committed, but local settings are ignored
+.vscode/*.log
+.vscode/.ropeproject
+
+# JetBrains IDEs (IntelliJ, WebStorm, PyCharm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Browser Automation & Testing
+.playwright-mcp/
+playwright-report/
+test-results/
+*.trace.zip
+
+# AWS & Terraform
+# Terraform state files (NEVER commit these)
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# AWS credentials and config (NEVER commit these)
+.aws/
+aws-exports.js
+awsconfiguration.json
+amplifyconfiguration.json
+amplify-build-config.json
+amplify-gradle-config.json
+amplifytools.xcconfig
+.amplify/
+amplify/.config/
+
+# Environment Variables (global - frontend has its own)
+*.env
+secrets.env
+
+# Secrets and Keys (NEVER commit these)
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+secrets.yml
+secrets.yaml
+credentials.json
+
+# Lambda Functions
+lambdas/**/node_modules/
+lambdas/**/__pycache__/
+lambdas/**/*.pyc
+lambdas/**/.pytest_cache/
+lambdas/**/venv/
+lambdas/**/env/
+lambdas/**/.venv/
+lambdas/**/dist/
+lambdas/**/build/
+lambdas/**/*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.python-version
+.pytype/
+.venv/
+venv/
+ENV/
+env/
+
+# Node.js (global - frontend has its own node_modules and logs)
+# Only top-level node_modules if accidentally created
+/node_modules/
+.npm
+.yarn-integrity
+
+# Package manager lock files (optional - some teams commit these)
+# Uncomment if you want to ignore them globally
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Logs
+logs/
+combined.log
+error.log
+
+# Coverage and Test Reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.hypothesis/
+
+# Documentation Build Output
+docs/_build/
+docs/.doctrees/
+site/
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+
+# Miscellaneous
+.cache/
+*.seed
+*.pid
+*.pid.lock
+*.tmp
+.temp/
+temp/
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+[Tt]humbs.db
+[Tt]humbs.db:encryptable
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+.nfs*
