@@ -27,6 +27,7 @@ export interface Question {
     questionType: QuestionType;
     difficulty: QuestionDifficulty;
     questionText: string;
+    scenario?: string; // Optional scenario context for scenario-based questions
     codeSnippet?: string;
     options: QuestionOption[];
     correctAnswers: string[]; // Array of option IDs (e.g., ["A"] or ["A", "C"])
