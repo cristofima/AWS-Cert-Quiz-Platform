@@ -1,0 +1,147 @@
+# GraphQL Schema for AWS Certification Quiz Platform
+# Supports quiz question selection, score calculation, and progress tracking
+
+# Query type
+type Query {
+  # Get random questions for a quiz
+  getQuizQuestions(input: GetQuizQuestionsInput!): GetQuizQuestionsResponse!
+    @aws_cognito_user_pools
+
+  # Get user progress for an exam type
+  getUserProgress(examType: String!): UserProgress @aws_cognito_user_pools
+
+  # Get quiz session history
+  getQuizHistory(limit: Int, nextToken: String): QuizHistoryResponse!
+    @aws_cognito_user_pools
+}
+
+# Mutation type
+type Mutation {
+  # Submit quiz answers and get score
+  submitQuiz(input: SubmitQuizInput!): SubmitQuizResponse!
+    @aws_cognito_user_pools
+}
+
+# Input Types
+
+input GetQuizQuestionsInput {
+  examType: String!
+  questionCount: Int!
+  domains: [String!]
+}
+
+input SubmitQuizInput {
+  examType: String!
+  questionIds: [String!]!
+  userAnswers: [UserAnswerInput!]!
+}
+
+input UserAnswerInput {
+  questionId: String!
+  selectedAnswers: [String!]!
+}
+
+# Response Types
+
+type GetQuizQuestionsResponse {
+  examType: String!
+  questionCount: Int!
+  questions: [Question!]!
+}
+
+type SubmitQuizResponse {
+  sessionId: String!
+  examType: String!
+  totalQuestions: Int!
+  correctAnswers: Int!
+  scorePercentage: Int!
+  domainScores: [DomainScore!]!
+  results: [QuestionResult!]!
+}
+
+type QuizHistoryResponse {
+  sessions: [QuizSession!]!
+  nextToken: String
+}
+
+# Object Types
+
+type Question {
+  id: ID!
+  examType: String!
+  domain: String!
+  questionType: QuestionType!
+  questionText: String!
+  options: [QuestionOption!]!
+  difficulty: Difficulty
+  tags: [String!]
+  # Note: correctAnswers and explanation are NOT exposed here
+  # They are only returned in SubmitQuizResponse
+}
+
+type QuestionOption {
+  id: String!
+  text: String!
+}
+
+type QuestionResult {
+  questionId: String!
+  domain: String!
+  isCorrect: Boolean!
+  userAnswers: [String!]!
+  correctAnswers: [String!]!
+  explanation: String!
+}
+
+type DomainScore {
+  domain: String!
+  correct: Int!
+  total: Int!
+  percentage: Int!
+}
+
+type UserProgress {
+  userId: String!
+  examType: String!
+  quizzesTaken: Int!
+  averageScore: Int!
+  lastScore: Int!
+  domainScores: [DomainScore!]!
+  lastUpdated: String!
+}
+
+type QuizSession {
+  sessionId: String!
+  examType: String!
+  totalQuestions: Int!
+  correctAnswers: Int!
+  scorePercentage: Int!
+  completedAt: String!
+}
+
+# Enum Types
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SCENARIO_BASED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ExamType {
+  DEVELOPER_ASSOCIATE
+  SOLUTIONS_ARCHITECT_ASSOCIATE
+  SYSOPS_ADMINISTRATOR_ASSOCIATE
+}
+
+# Schema definition
+schema {
+  query: Query
+  mutation: Mutation
+}
