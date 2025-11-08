@@ -1,0 +1,23 @@
+{
+  "name": "score-calculator",
+  "version": "1.0.0",
+  "description": "Lambda function to calculate quiz scores and store results in DynamoDB",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "package": "npm run build && zip -r score-calculator.zip dist node_modules"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.679.0",
+    "@aws-sdk/util-dynamodb": "^3.679.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

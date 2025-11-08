@@ -1,0 +1,23 @@
+{
+  "name": "quiz-selector",
+  "version": "1.0.0",
+  "description": "Lambda function to select random quiz questions from DynamoDB",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "package": "npm run build && zip -r quiz-selector.zip dist node_modules"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.679.0",
+    "@aws-sdk/util-dynamodb": "^3.679.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
