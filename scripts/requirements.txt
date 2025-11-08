@@ -1,0 +1,8 @@
+# Python Dependencies for AWS Certification Quiz Platform
+# Install with: pip install -r requirements.txt
+
+# AWS SDK for Python
+boto3>=1.34.0
+
+# Optional: For enhanced CLI output
+colorama>=0.4.6
