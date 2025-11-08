@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to AWS Quiz Platform</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+    "
+  >
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background-color: #f5f5f5; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <table
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              background-color: #ffffff;
+              border-radius: 8px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            "
+          >
+            <!-- Header -->
+            <tr>
+              <td
+                style="
+                  background: linear-gradient(135deg, #232f3e 0%, #37475a 100%);
+                  padding: 40px;
+                  text-align: center;
+                  border-radius: 8px 8px 0 0;
+                "
+              >
+                <h1
+                  style="
+                    color: #ffffff;
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 600;
+                  "
+                >
+                  🎉 Welcome to AWS Quiz Platform
+                </h1>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td style="padding: 40px">
+                <h2
+                  style="
+                    color: #232f3e;
+                    margin: 0 0 20px 0;
+                    font-size: 24px;
+                    font-weight: 600;
+                  "
+                >
+                  Your Admin Account is Ready
+                </h2>
+
+                <p
+                  style="
+                    color: #37475a;
+                    font-size: 16px;
+                    line-height: 24px;
+                    margin: 0 0 20px 0;
+                  "
+                >
+                  An administrator has created an account for you on AWS Quiz
+                  Platform. You now have access to manage questions, view
+                  analytics, and generate AI-powered quiz content.
+                </p>
+
+                <p
+                  style="
+                    color: #37475a;
+                    font-size: 16px;
+                    line-height: 24px;
+                    margin: 0 0 10px 0;
+                  "
+                >
+                  <strong>Your username:</strong> {username}
+                </p>
+
+                <p
+                  style="
+                    color: #37475a;
+                    font-size: 16px;
+                    line-height: 24px;
+                    margin: 0 0 30px 0;
+                  "
+                >
+                  <strong>Your temporary password:</strong>
+                </p>
+
+                <!-- Temporary Password -->
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding: 20px 0">
+                      <div
+                        style="
+                          background-color: #fff3cd;
+                          border: 2px solid #ffe69c;
+                          border-radius: 8px;
+                          padding: 20px;
+                          display: inline-block;
+                        "
+                      >
+                        <span
+                          style="
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: #856404;
+                            letter-spacing: 4px;
+                            font-family: 'Courier New', monospace;
+                          "
+                        >
+                          {####}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA Button -->
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="margin: 30px 0"
+                >
+                  <tr>
+                    <td align="center">
+                      <a
+                        href="https://your-app-url.amplifyapp.com/login"
+                        style="
+                          display: inline-block;
+                          background: linear-gradient(
+                            135deg,
+                            #ff9900 0%,
+                            #ff6600 100%
+                          );
+                          color: #ffffff;
+                          text-decoration: none;
+                          padding: 16px 40px;
+                          border-radius: 6px;
+                          font-size: 16px;
+                          font-weight: 600;
+                          box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+                        "
+                      >
+                        Sign In Now
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div
+                  style="
+                    background-color: #e8f4f8;
+                    border-left: 4px solid #0073bb;
+                    padding: 16px;
+                    border-radius: 4px;
+                    margin: 30px 0;
+                  "
+                >
+                  <p
+                    style="
+                      color: #37475a;
+                      font-size: 14px;
+                      line-height: 20px;
+                      margin: 0;
+                    "
+                  >
+                    <strong>⚠️ Important:</strong> You will be required to
+                    change your password on first login for security purposes.
+                  </p>
+                </div>
+
+                <h3
+                  style="
+                    color: #232f3e;
+                    margin: 30px 0 15px 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                  "
+                >
+                  What You Can Do:
+                </h3>
+
+                <ul
+                  style="
+                    color: #37475a;
+                    font-size: 14px;
+                    line-height: 24px;
+                    margin: 0;
+                    padding-left: 20px;
+                  "
+                >
+                  <li>
+                    Manage quiz questions across all AWS certification exams
+                  </li>
+                  <li>Generate AI-powered questions using Amazon Bedrock</li>
+                  <li>View user analytics and quiz performance metrics</li>
+                  <li>Approve or reject AI-generated content</li>
+                </ul>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  background-color: #f7f9fa;
+                  padding: 30px;
+                  text-align: center;
+                  border-radius: 0 0 8px 8px;
+                  border-top: 1px solid #d5dbdb;
+                "
+              >
+                <p
+                  style="
+                    color: #687078;
+                    font-size: 14px;
+                    line-height: 20px;
+                    margin: 0 0 10px 0;
+                  "
+                >
+                  <strong>Need help getting started?</strong> Check out our
+                  <a href="#" style="color: #ff9900; text-decoration: none"
+                    >Admin Guide</a
+                  >
+                </p>
+                <p
+                  style="
+                    color: #879196;
+                    font-size: 12px;
+                    line-height: 18px;
+                    margin: 0;
+                  "
+                >
+                  © 2024 AWS Quiz Platform. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Security Notice -->
+          <table
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="margin-top: 20px"
+          >
+            <tr>
+              <td style="padding: 0 20px">
+                <p
+                  style="
+                    color: #879196;
+                    font-size: 12px;
+                    line-height: 18px;
+                    text-align: center;
+                    margin: 0;
+                  "
+                >
+                  🔒 Keep your password secure. AWS Quiz Platform will never ask
+                  for your password via email.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

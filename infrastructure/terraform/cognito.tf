@@ -57,6 +57,29 @@ resource "aws_cognito_user_pool" "main" {
     email_sending_account = "COGNITO_DEFAULT"
   }
 
+  # Custom Email Templates
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+
+    # Email verification
+    email_message = file("${path.module}/email-templates/verification-email.html")
+    email_subject = "Verify your AWS Quiz Platform account"
+
+    # SMS verification (if needed)
+    sms_message = "Your AWS Quiz Platform verification code is {####}"
+  }
+
+  # Admin user invitation template
+  admin_create_user_config {
+    allow_admin_create_user_only = false
+
+    invite_message_template {
+      email_message = file("${path.module}/email-templates/admin-invite-email.html")
+      email_subject = "Welcome to AWS Quiz Platform - Set your password"
+      sms_message   = "Your username is {username} and temporary password is {####}"
+    }
+  }
+
   # MFA Configuration (Optional)
   mfa_configuration = "OPTIONAL"
 
