@@ -3,9 +3,11 @@
  *
  * Allows users to configure their quiz session by selecting:
  * - Exam type (Developer Associate, Solutions Architect, SysOps)
- * - Number of questions (10, 20, 30, 50)
+ * - Number of questions (20, 30, 45, 65 - based on real AWS exam specs)
  *
- * This component is used at the start of a quiz session.
+ * Question counts match official AWS certification exam patterns:
+ * - All Associate exams have 65 questions in the real exam
+ * - Practice options: 20 (quick), 30 (standard), 45 (extended), 65 (full simulation)
  */
 
 "use client";
@@ -28,38 +30,23 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { ExamType } from "@/types";
+import {
+  EXAM_CONFIGS,
+  calculateEstimatedTime,
+  getExamConfig,
+} from "@/lib/exam-config";
 
 interface QuizSelectorProps {
   onStartQuiz: (examType: ExamType, questionCount: number) => void;
   isLoading?: boolean;
 }
 
-const EXAM_TYPES: { value: ExamType; label: string; domains: number }[] = [
-  {
-    value: "Developer-Associate",
-    label: "AWS Developer Associate",
-    domains: 5,
-  },
-  {
-    value: "Solutions-Architect-Associate",
-    label: "AWS Solutions Architect Associate",
-    domains: 4,
-  },
-  {
-    value: "SysOps-Administrator-Associate",
-    label: "AWS SysOps Administrator Associate",
-    domains: 6,
-  },
-];
-
-const QUESTION_COUNTS = [10, 20, 30, 50];
-
 export function QuizSelector({
   onStartQuiz,
   isLoading = false,
 }: QuizSelectorProps) {
   const [selectedExam, setSelectedExam] = useState<ExamType | "">("");
-  const [selectedCount, setSelectedCount] = useState<number>(20);
+  const [selectedCount, setSelectedCount] = useState<number>(30); // Default to 30 questions
 
   const handleStartQuiz = () => {
     if (selectedExam) {
@@ -67,9 +54,8 @@ export function QuizSelector({
     }
   };
 
-  const selectedExamData = EXAM_TYPES.find(
-    (exam) => exam.value === selectedExam
-  );
+  const selectedExamConfig = selectedExam ? getExamConfig(selectedExam) : null;
+  const estimatedTime = calculateEstimatedTime(selectedCount);
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -97,23 +83,31 @@ export function QuizSelector({
               <SelectValue placeholder="Select an exam" />
             </SelectTrigger>
             <SelectContent>
-              {EXAM_TYPES.map((exam) => (
-                <SelectItem key={exam.value} value={exam.value}>
+              {Object.values(EXAM_CONFIGS).map((examConfig) => (
+                <SelectItem
+                  key={examConfig.examType}
+                  value={examConfig.examType}
+                >
                   <div className="flex items-center justify-between w-full">
-                    <span>{exam.label}</span>
+                    <span>{examConfig.label}</span>
                     <Badge variant="secondary" className="ml-2">
-                      {exam.domains} domains
+                      {examConfig.domains.length} domains
                     </Badge>
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {selectedExamData && (
-            <p className="text-sm text-muted-foreground">
-              Selected: {selectedExamData.label} ({selectedExamData.domains}{" "}
-              knowledge domains)
-            </p>
+          {selectedExamConfig && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Selected: {selectedExamConfig.label}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Official exam: {selectedExamConfig.officialQuestionCount}{" "}
+                questions, {selectedExamConfig.officialTimeLimitMinutes} minutes
+              </p>
+            </div>
           )}
         </div>
 
@@ -128,26 +122,29 @@ export function QuizSelector({
           <Select
             value={selectedCount.toString()}
             onValueChange={(value) => setSelectedCount(parseInt(value))}
+            disabled={!selectedExam}
           >
             <SelectTrigger id="question-count">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {QUESTION_COUNTS.map((count) => (
+              {selectedExamConfig?.practiceQuestionCounts.map((count) => (
                 <SelectItem key={count} value={count.toString()}>
-                  {count} questions
-                  {count === 20 && (
-                    <Badge variant="outline" className="ml-2">
-                      Recommended
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span>{count} questions</span>
+                    {count === selectedExamConfig.defaultPracticeCount && (
+                      <Badge variant="outline">Recommended</Badge>
+                    )}
+                    {count === selectedExamConfig.officialQuestionCount && (
+                      <Badge variant="default">Full Exam</Badge>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
-            Estimated time: {Math.ceil(selectedCount * 1.5)} -{" "}
-            {selectedCount * 2} minutes
+            Estimated time: {estimatedTime.min} - {estimatedTime.max} minutes
           </p>
         </div>
 
@@ -168,6 +165,7 @@ export function QuizSelector({
             <li>Questions are randomly selected from the database</li>
             <li>Your progress is saved automatically</li>
             <li>You can review explanations after each question</li>
+            <li>Practice with different question counts to build confidence</li>
           </ul>
         </div>
       </CardContent>
