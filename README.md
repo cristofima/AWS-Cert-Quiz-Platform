@@ -11,32 +11,35 @@
 
 ## 🎯 Project Overview
 
-A serverless quiz platform for AWS certification exam preparation. Built with Next.js 16 and Terraform, featuring pre-seeded questions for fast loading times (<100ms).
+A serverless quiz platform for AWS certification exam preparation. Built with Next.js 16 and Terraform, featuring AI-powered question generation with Amazon Bedrock.
 
 ### Key Features
 
-- ✅ **1,200+ Pre-seeded Questions** across AWS Developer Associate domains
+- ✅ **AI-Powered Questions**: Generated with Claude 3.5 Sonnet via Amazon Bedrock
 - ✅ **Multiple Question Types**: Single-choice, multiple-choice, true/false, scenario-based
 - ✅ **Real-time Scoring** with detailed explanations
 - ✅ **Progress Tracking** with domain-level analytics
 - ✅ **Lightning Fast**: <100ms quiz loading with DynamoDB
-- ✅ **Cost-Optimized**: $7.30/month for development environment
+- ✅ **Cost-Optimized**: ~$0.50/month for 100 active users
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-Next.js 16 (Amplify) → Cognito → AppSync GraphQL → Lambda → DynamoDB
+Next.js 16 (App Router) → Cognito Auth → AppSync GraphQL → Lambda → DynamoDB
+                                                                ↓
+                                                        Bedrock (Claude 3.5)
 ```
 
 ### AWS Services Used
 
 - **Frontend**: Next.js 16 (App Router with TypeScript)
 - **Authentication**: Amazon Cognito (User Pools + Groups)
-- **API**: AWS AppSync (GraphQL)
-- **Compute**: AWS Lambda (Node.js 20)
-- **Database**: Amazon DynamoDB (3 core tables: Questions, QuizSessions, UserProgress)
+- **API**: AWS AppSync (GraphQL API with 4 resolvers)
+- **Compute**: AWS Lambda (Node.js 20, 512MB, 30s timeout)
+- **Database**: Amazon DynamoDB (3 tables: Questions, QuizSessions, UserProgress)
+- **AI**: Amazon Bedrock (Claude 3.5 Sonnet v2 for question generation)
 - **IaC**: Terraform 1.9+ (AWS Provider 5.x)
 
 ---
@@ -46,25 +49,27 @@ Next.js 16 (Amplify) → Cognito → AppSync GraphQL → Lambda → DynamoDB
 ### Frontend
 
 - **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript 5.0+
-- **Styling**: Tailwind CSS 4+
-- **Components**: shadcn/ui (Radix UI primitives)
-- **Forms**: React Hook Form + Zod
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS 4
+- **UI Components**: shadcn/ui (11 components)
+- **Auth**: AWS Amplify Auth
+- **Forms**: React Hook Form + Zod validation
 - **State**: React Context + TanStack Query
 
-### Backend (Infrastructure as Code)
+### Backend
 
 - **IaC**: Terraform 1.9+
-- **AWS Provider**: ~> 5.0 (latest stable)
+- **AWS Provider**: ~> 5.0
 - **Region**: us-east-1 (N. Virginia)
-- **State Management**: S3 backend with encryption
+- **Lambda Runtime**: Node.js 20
+- **Python**: 3.12 (Bedrock scripts)
 
 ### Lambda Functions
 
-| Function           | Runtime    | Memory | Purpose                                  |
-| ------------------ | ---------- | ------ | ---------------------------------------- |
-| `quiz-selector`    | Node.js 20 | 512 MB | Random question selection                |
-| `score-calculator` | Node.js 20 | 512 MB | Score calculation (multi-answer support) |
+| Function           | Runtime    | Memory | Purpose                                            |
+| ------------------ | ---------- | ------ | -------------------------------------------------- |
+| `quiz-selector`    | Node.js 20 | 512 MB | Random question selection (strips correct answers) |
+| `score-calculator` | Node.js 20 | 512 MB | Server-side scoring + session tracking             |
 
 ---
 
@@ -74,8 +79,9 @@ Next.js 16 (Amplify) → Cognito → AppSync GraphQL → Lambda → DynamoDB
 
 - **Node.js**: 20.x or later
 - **Terraform**: 1.9 or later
+- **Python**: 3.9+ (for question generation)
 - **AWS CLI**: Configured with credentials
-- **AWS Account**: With permissions for Cognito, AppSync, Lambda, DynamoDB
+- **AWS Account**: With permissions for Cognito, AppSync, Lambda, DynamoDB, Bedrock
 
 ### 1. Clone the Repository
 
@@ -84,28 +90,16 @@ git clone https://github.com/cristofima/AWS-Cert-Quiz-Platform.git
 cd AWS-Cert-Quiz-Platform
 ```
 
-### 2. Install Dependencies
+### 2. Install Lambda Dependencies (BEFORE Terraform)
+
+⚠️ **CRITICAL**: Install dependencies before deploying infrastructure (Terraform packages them into ZIPs).
 
 ```bash
-# Install frontend dependencies
-npm install
-
-# Install Lambda dependencies
 cd lambdas/quiz-selector && npm install && cd ../..
 cd lambdas/score-calculator && npm install && cd ../..
 ```
 
-### 3. Configure Environment Variables
-
-```bash
-# Copy example environment file
-cp .env.example .env.local
-
-# Edit .env.local with your values
-# (You'll get these after Terraform deployment)
-```
-
-### 4. Deploy Infrastructure with Terraform
+### 3. Deploy Infrastructure with Terraform
 
 ```bash
 cd infrastructure/terraform
@@ -114,32 +108,44 @@ cd infrastructure/terraform
 terraform init
 
 # Review planned changes
-terraform plan
+terraform plan -var="article_phase=article-2"
 
 # Deploy infrastructure
-terraform apply -auto-approve
+terraform apply -var="article_phase=article-2" -auto-approve
 
-# Note the outputs (you'll need these for .env.local)
-terraform output
+# Save outputs for frontend configuration
+terraform output -json > outputs.json
 ```
 
-### 5. Seed Initial Question Bank
+### 4. Configure Frontend Environment
+
+Create `frontend/.env.local` from Terraform outputs:
 
 ```bash
-# Run question seeding script
-python scripts/seed-questions.py \
-  --exam-type "Developer-Associate" \
-  --count 1200 \
-  --region us-east-1
-
-# This will store 1,200 pre-generated questions in DynamoDB
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
+NEXT_PUBLIC_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+NEXT_PUBLIC_APPSYNC_GRAPHQL_ENDPOINT=https://xxxxx.appsync-api.us-east-1.amazonaws.com/graphql
+NEXT_PUBLIC_AWS_REGION=us-east-1
 ```
+
+### 5. Generate Questions with Bedrock
+
+```bash
+cd scripts
+pip install -r requirements.txt
+
+python generate-questions.py \
+  --exam-type Developer-Associate \
+  --count 50 \
+  --region us-east-1
+```
+
+**Cost**: ~$0.015 per question (~$0.75 for 50 questions)
 
 ### 6. Start Development Server
 
 ```bash
-# Return to project root
-cd ../..
+cd frontend
 
 # Start Next.js dev server
 npm run dev
@@ -147,45 +153,75 @@ npm run dev
 # Open http://localhost:3000
 ```
 
+**Live Resource IDs**: Check `infrastructure/terraform/outputs.json` for actual deployed values.
+
 ---
 
 ## 📁 Project Structure
 
 ```
 aws-cert-quiz-platform/
-├── app/                          # Next.js 16 App Router
-│   ├── (auth)/                   # Login/Signup pages
-│   ├── (dashboard)/              # Quiz, progress, history
-│   ├── layout.tsx
-│   └── page.tsx
-├── components/
-│   ├── ui/                       # shadcn/ui components
-│   ├── quiz/                     # Quiz-specific components
-│   └── auth/                     # Auth components
-├── lib/
-│   ├── amplify-config.ts         # Amplify configuration
-│   ├── graphql/                  # GraphQL queries/mutations
-│   └── utils.ts
+├── docs/                         # 📚 Complete documentation
+│   ├── README.md                 # Documentation index
+│   ├── architecture/             # System design docs
+│   │   ├── system-overview.md
+│   │   └── authentication.md
+│   ├── deployment/               # Deployment guides
+│   │   ├── README.md
+│   │   ├── troubleshooting.md
+│   │   └── email-templates.md
+│   └── development/              # Developer guides
+│       ├── frontend-guide.md
+│       ├── graphql-integration.md
+│       └── colors.md
+├── frontend/                     # Next.js 16 App
+│   ├── app/                      # App Router
+│   │   ├── (auth)/               # Login/Signup
+│   │   ├── (dashboard)/          # Quiz, history, progress
+│   │   └── admin/                # Admin panel (future)
+│   ├── components/
+│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── quiz/                 # Quiz components
+│   │   └── auth/                 # Auth components
+│   ├── lib/
+│   │   ├── auth/                 # Amplify config
+│   │   ├── graphql/              # GraphQL client
+│   │   └── utils.ts
+│   └── types/                    # TypeScript types
 ├── infrastructure/
 │   └── terraform/
-│       ├── main.tf               # Main Terraform config
-│       ├── cognito.tf            # Cognito User Pools
-│       ├── appsync.tf            # AppSync GraphQL API
-│       ├── dynamodb.tf           # DynamoDB tables
-│       ├── lambda.tf             # Lambda functions
-│       └── outputs.tf            # Terraform outputs
+│       ├── main.tf               # Main config
+│       ├── cognito.tf            # User auth
+│       ├── appsync.tf            # GraphQL API
+│       ├── dynamodb.tf           # Database tables
+│       ├── lambda.tf             # Serverless functions
+│       ├── schema.graphql        # GraphQL schema
+│       └── email-templates/      # Custom email HTML
 ├── lambdas/
-│   ├── quiz-selector/            # Question selection logic
+│   ├── quiz-selector/            # Question selection
 │   └── score-calculator/         # Scoring logic
 ├── scripts/
-│   └── seed-questions.py         # Question seeding script
-├── .env.local                    # Environment variables (not in repo)
-├── .env.example                  # Environment template
-├── next.config.js
-├── tailwind.config.ts
-├── tsconfig.json
-└── package.json
+│   ├── generate-questions.py    # Bedrock AI generation
+│   └── seed-questions.py         # Batch DynamoDB upload
+├── .github/
+│   ├── copilot-instructions.md  # AI coding guidelines
+│   └── nextjs-code-generation-instructions.md
+├── README.md                     # This file
+└── LICENSE
 ```
+
+---
+
+## 📚 Documentation
+
+**Complete documentation available in [`docs/`](./docs/README.md)**:
+
+- **[System Architecture](./docs/architecture/system-overview.md)** - Complete system design
+- **[Deployment Guide](./docs/deployment/README.md)** - Step-by-step deployment
+- **[Troubleshooting](./docs/deployment/troubleshooting.md)** - Common issues & solutions
+- **[Authentication Flow](./docs/architecture/authentication.md)** - Cognito & session management
+- **[Frontend Development](./docs/development/frontend-guide.md)** - Next.js coding standards
+- **[GraphQL Integration](./docs/development/graphql-integration.md)** - Connecting to AppSync
 
 ---
 
@@ -193,81 +229,127 @@ aws-cert-quiz-platform/
 
 ### User Roles
 
-- **Users**: Can take quizzes, view progress, access history
-- **Admins**: (Future) Question management capabilities
+- **Users** (default): Take quizzes, view progress, access history
+- **Admins** (manual assignment): Question management, analytics (Phase 3)
 
-### Creating Users
+### Creating Admin Users
 
-Users can sign up through the Cognito-powered authentication flow integrated in the Next.js app.
+```powershell
+aws cognito-idp admin-add-user-to-group `
+  --user-pool-id us-east-1_XNLodSkoE `
+  --username admin@example.com `
+  --group-name Admins `
+  --region us-east-1
+```
+
+See [Authentication Guide](./docs/architecture/authentication.md) for details.
 
 ---
 
 ## 💰 Cost Estimation
 
-### Development Environment
+### Development Environment (100 Active Users)
 
-| Service   | Usage                          | Monthly Cost     |
-| --------- | ------------------------------ | ---------------- |
-| Cognito   | <50 MAU                        | Free             |
-| AppSync   | <250k requests                 | Free             |
-| Lambda    | <1M invocations                | Free             |
-| DynamoDB  | <25 GB storage, <200M requests | Free (Free Tier) |
-| **Total** |                                | **~$7.30/month** |
+| Service    | Usage                          | Monthly Cost     |
+| ---------- | ------------------------------ | ---------------- |
+| Cognito    | <50 MAU                        | **Free**         |
+| AppSync    | <250k requests                 | **Free**         |
+| Lambda     | <1M invocations                | **Free**         |
+| DynamoDB   | <25 GB storage, <200M requests | **Free**         |
+| CloudWatch | ~100 MB logs                   | **~$0.50**       |
+| Bedrock    | 50 questions generated         | **$0.75**        |
+| **Total**  |                                | **~$1.25/month** |
 
 ### Production (500 Active Users)
 
-| Service     | Usage                    | Monthly Cost    |
-| ----------- | ------------------------ | --------------- |
-| AWS Amplify | 5 GB bandwidth           | $2-5            |
-| Cognito     | 500 MAU                  | Free            |
-| AppSync     | 50k requests             | $0.20           |
-| Lambda      | 42k invocations          | $0.30           |
-| DynamoDB    | 150k reads/writes, 15 GB | $3-5            |
-| CloudWatch  | Logs + metrics           | $1-3            |
-| **Total**   |                          | **$7-14/month** |
+| Service    | Usage                    | Monthly Cost   |
+| ---------- | ------------------------ | -------------- |
+| Cognito    | 500 MAU                  | Free           |
+| AppSync    | 50k requests/month       | $0.20          |
+| Lambda     | 100k invocations         | $0.30          |
+| DynamoDB   | 150k reads/writes, 15 GB | $3-5           |
+| CloudWatch | Logs + metrics           | $1-2           |
+| Bedrock    | 100 questions/month      | $1.50          |
+| **Total**  |                          | **$6-9/month** |
 
 ### Cost vs Traditional Setup
 
 | Setup                        | Monthly Cost | Savings    |
 | ---------------------------- | ------------ | ---------- |
-| EC2 + RDS + ELB              | $125-140     | -          |
-| **This Serverless Platform** | **$7-14**    | **90-95%** |
+| EC2 + RDS + Load Balancer    | $125-140     | -          |
+| **This Serverless Platform** | **$6-9**     | **93-95%** |
+
+**All costs assume AWS Free Tier usage where applicable.**
 
 ---
 
-## 📖 API Documentation
+## 🧪 Testing
 
-- **GraphQL Schema**: See `infrastructure/terraform/appsync.tf`
-- **Lambda Functions**: Each function has inline JSDoc/docstrings
+### Run Frontend Tests
+
+```bash
+cd frontend
+npm test
+```
+
+### Test Lambda Functions Locally
+
+```bash
+# Install dependencies
+cd lambdas/quiz-selector
+npm install
+npm test
+
+# Test with sample payload
+node index.js
+```
+
+### Test Infrastructure
+
+```bash
+cd infrastructure/terraform
+terraform validate
+terraform plan
+```
+
+See [Testing Guide](./docs/development/testing.md) for comprehensive testing strategies.
 
 ---
 
 ## 🚧 Current Status
 
+**Phase 2 Deployed** ✅ (November 2025)
+
 ### Completed ✅
 
-- [x] Repository structure and documentation
-- [x] Next.js 16 frontend setup with shadcn/ui components
-- [x] Landing page with AWS branding
-- [x] TypeScript types for Question, QuizSession, UserProgress
-- [x] Route structure (auth, dashboard, admin placeholders)
+- [x] Complete Terraform infrastructure (Cognito, DynamoDB, AppSync, Lambda)
+- [x] Next.js 16 frontend with App Router + TypeScript
+- [x] Authentication flow (signup, login, email verification, password reset)
+- [x] Lambda functions (quiz-selector, score-calculator with domain analytics)
+- [x] GraphQL API with 4 resolvers
+- [x] Dashboard with quiz history and progress tracking
+- [x] AI question generation with Amazon Bedrock (Claude 3.5 Sonnet)
+- [x] Custom email templates for Cognito
+- [x] shadcn/ui component library (11 components)
+- [x] Domain-based question distribution
+- [x] Server-side scoring (security-first design)
 
-### In Progress 🚧
+### In Progress �
 
-- [ ] Terraform infrastructure (Cognito, DynamoDB, AppSync, Lambda)
-- [ ] Lambda functions (quiz-selector, score-calculator)
-- [ ] GraphQL schema and resolvers
-- [ ] Quiz UI components (QuizSelector, QuestionCard)
-- [ ] Question seeding script
+- [ ] Admin panel for question management (Phase 3)
+- [ ] Question approval workflow
+- [ ] Advanced analytics dashboard
+- [ ] Automated weekly question generation (EventBridge)
 
 ### Future Enhancements 💡
 
-- [ ] Admin panel for question management
-- [ ] AI-powered question generation (Amazon Bedrock)
-- [ ] Advanced analytics dashboard
 - [ ] Spaced repetition algorithm
+- [ ] Study notes and flashcards
+- [ ] Community-contributed questions
+- [ ] Leaderboard and achievements
 - [ ] Mobile app (React Native)
-- [ ] More exam types (Solutions Architect, SysOps)
+- [ ] More exam types (Solutions Architect Professional, DevOps Engineer, Security Specialty)
+- [ ] Practice labs with AWS Sandbox accounts
 
 ---
 
@@ -281,19 +363,62 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### Contribution Guidelines
+
+- Follow [Next.js code generation instructions](./.github/nextjs-code-generation-instructions.md)
+- Write clear commit messages (see [Git commit guidelines](./.github/git-commit-messages-instructions.md))
+- Add tests for new features
+- Update documentation as needed
+- Ensure all linting passes (`npm run lint`)
+
 ### Contribution Ideas
 
-- Implement missing Lambda functions
-- Add more exam types (Solutions Architect, SysOps, etc.)
-- Improve question quality and coverage
-- Add frontend features (dark mode, accessibility)
-- Write tests (unit and E2E)
+- **Frontend**: Dark mode, accessibility improvements, mobile responsiveness
+- **Backend**: Additional exam types, question validation, analytics
+- **DevOps**: CI/CD pipelines, automated testing, monitoring dashboards
+- **Documentation**: Tutorials, video guides, architecture diagrams
+- **Questions**: Add more practice questions for existing exam types
+
+---
+
+## 🆘 Getting Help
+
+- **Documentation**: [docs/](./docs/README.md)
+- **Troubleshooting**: [Troubleshooting Guide](./docs/deployment/troubleshooting.md)
+- **GitHub Issues**: [Report a bug or request a feature](https://github.com/cristofima/AWS-Cert-Quiz-Platform/issues)
+- **AWS Support**: [AWS Support Center](https://console.aws.amazon.com/support/)
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **AWS**: For providing excellent serverless services
+- **Next.js Team**: For the amazing React framework
+- **shadcn/ui**: For beautiful, accessible UI components
+- **Terraform**: For infrastructure as code excellence
+- **Anthropic**: For Claude 3.5 Sonnet AI model
+
+---
+
+## 📊 Project Metrics
+
+- **Lines of Code**: ~15,000
+- **AWS Services Used**: 7 (Cognito, AppSync, Lambda, DynamoDB, Bedrock, CloudWatch, IAM)
+- **Lambda Functions**: 2
+- **DynamoDB Tables**: 3
+- **GraphQL Resolvers**: 4
+- **Frontend Components**: 25+
+- **Documentation Pages**: 15+
+
+---
+
+**Built with ❤️ for the AWS certification community**
 
 ---
 
