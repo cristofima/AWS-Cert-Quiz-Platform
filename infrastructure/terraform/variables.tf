@@ -117,3 +117,12 @@ variable "appsync_log_level" {
     error_message = "Log level must be NONE, ERROR, or ALL"
   }
 }
+
+#------------------------------------------------------------------------------
+# Frontend Configuration
+#------------------------------------------------------------------------------
+variable "frontend_url" {
+  description = "Frontend URL for password reset links (e.g., https://app.example.com or http://localhost:3000)"
+  type        = string
+  default     = "http://localhost:3000"
+}

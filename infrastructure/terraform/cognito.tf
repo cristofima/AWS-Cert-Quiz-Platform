@@ -92,6 +92,11 @@ resource "aws_cognito_user_pool" "main" {
     advanced_security_mode = "AUDIT"
   }
 
+  # Lambda Triggers - Custom Message for forgot password emails
+  lambda_config {
+    custom_message = aws_lambda_function.custom_message.arn
+  }
+
   # Deletion Protection
   deletion_protection = "ACTIVE"
 

@@ -288,3 +288,92 @@ resource "aws_cloudwatch_log_group" "score_calculator" {
 #     FunctionName = aws_lambda_function.score_calculator[0].function_name
 #   }
 # }
+
+#------------------------------------------------------------------------------
+# Custom Message Lambda (Cognito Email Customization)
+#------------------------------------------------------------------------------
+
+# IAM Role for CustomMessage Lambda
+resource "aws_iam_role" "custom_message_lambda" {
+  name = "${var.project_name}-custom-message-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-custom-message-role-${var.environment}"
+  }
+}
+
+# Basic Lambda execution policy for CustomMessage
+resource "aws_iam_role_policy_attachment" "custom_message_basic" {
+  role       = aws_iam_role.custom_message_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Archive CustomMessage Lambda source code
+data "archive_file" "custom_message" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambdas/custom-message"
+  output_path = "${path.module}/../../.terraform/lambda/custom-message.zip"
+
+  excludes = [
+    "index.ts",
+    "tsconfig.json",
+    "dist",
+    "*.d.ts",
+    "*.map"
+  ]
+}
+
+# CustomMessage Lambda Function
+resource "aws_lambda_function" "custom_message" {
+  filename         = data.archive_file.custom_message.output_path
+  function_name    = "${var.project_name}-custom-message-${var.environment}"
+  role             = aws_iam_role.custom_message_lambda.arn
+  handler          = "index.handler"
+  source_code_hash = data.archive_file.custom_message.output_base64sha256
+  runtime          = var.lambda_runtime
+  timeout          = 10 # CustomMessage trigger has strict timeout limits
+  memory_size      = 256
+
+  environment {
+    variables = {
+      FRONTEND_URL = var.frontend_url
+      LOG_LEVEL    = "INFO"
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-custom-message-${var.environment}"
+  }
+}
+
+# CloudWatch Log Group for CustomMessage Lambda
+resource "aws_cloudwatch_log_group" "custom_message" {
+  name              = "/aws/lambda/${aws_lambda_function.custom_message.function_name}"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project_name}-custom-message-logs-${var.environment}"
+  }
+}
+
+# Lambda Permission for Cognito to invoke CustomMessage
+resource "aws_lambda_permission" "cognito_custom_message" {
+  statement_id  = "AllowCognitoInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.custom_message.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.main.arn
+}

@@ -70,6 +70,16 @@ output "lambda_score_calculator_name" {
   value       = local.deploy_article_1 ? aws_lambda_function.score_calculator[0].function_name : null
 }
 
+output "lambda_custom_message_arn" {
+  description = "Custom Message Lambda Function ARN (Cognito Trigger)"
+  value       = aws_lambda_function.custom_message.arn
+}
+
+output "lambda_custom_message_name" {
+  description = "Custom Message Lambda Function Name"
+  value       = aws_lambda_function.custom_message.function_name
+}
+
 # AppSync Outputs (Article 1+)
 output "appsync_graphql_url" {
   description = "AppSync GraphQL API URL"
