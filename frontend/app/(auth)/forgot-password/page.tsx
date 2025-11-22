@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { resetPassword, confirmResetPassword } from "aws-amplify/auth";
-import { useRouter } from "next/navigation";
+import { resetPassword } from "aws-amplify/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,17 +13,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { configureAmplify } from "@/lib/auth/amplify-config";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<"request" | "reset">("request");
+  const [emailSent, setEmailSent] = useState(false);
 
   // Configure Amplify on component mount
   useEffect(() => {
@@ -32,26 +27,13 @@ export default function ForgotPasswordPage() {
   }, []);
 
   // Real-time form validation
-  const isRequestFormValid = useMemo(() => {
+  const isFormValid = useMemo(() => {
     return email.trim().length > 0 && email.includes("@");
   }, [email]);
-
-  const isResetFormValid = useMemo(() => {
-    return (
-      code.trim().length === 6 &&
-      newPassword.length >= 8 &&
-      newPassword === confirmPassword &&
-      /[A-Z]/.test(newPassword) && // Has uppercase
-      /[a-z]/.test(newPassword) && // Has lowercase
-      /[0-9]/.test(newPassword) && // Has number
-      /[^A-Za-z0-9]/.test(newPassword) // Has special character
-    );
-  }, [code, newPassword, confirmPassword]);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setIsLoading(true);
 
     try {
@@ -59,52 +41,43 @@ export default function ForgotPasswordPage() {
         username: email,
       });
 
-      setSuccess(`Password reset code sent to ${email}`);
-      setStep("reset");
+      setEmailSent(true);
+      toast.success("Password reset email sent! Check your inbox.", {
+        description: "The link will expire in 1 hour",
+        duration: 5000,
+      });
     } catch (err) {
       console.error("Password reset request error:", err);
-      setError(
+      const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to send reset code. Please try again."
-      );
+          : "Failed to send reset email. Please try again.";
+      setError(errorMessage);
+      toast.error("Failed to send reset email", {
+        description: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleConfirmReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleResendEmail = async () => {
     setError("");
-    setSuccess("");
-
-    if (!isResetFormValid) {
-      setError("Please fill in all fields correctly");
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      await confirmResetPassword({
+      await resetPassword({
         username: email,
-        confirmationCode: code,
-        newPassword,
       });
 
-      setSuccess("Password reset successful! Redirecting to login...");
-
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+      toast.success("Email resent successfully!", {
+        description: "Check your inbox",
+      });
     } catch (err) {
-      console.error("Password reset confirmation error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to reset password. Please check your code and try again."
-      );
+      console.error("Resend email error:", err);
+      toast.error("Failed to resend email", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -114,29 +87,19 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>
-            {step === "request" ? "Reset Password" : "Enter New Password"}
-          </CardTitle>
+          <CardTitle>Reset Password</CardTitle>
           <CardDescription>
-            {step === "request"
-              ? "Enter your email to receive a password reset code"
-              : "Enter the code sent to your email and your new password"}
+            {emailSent
+              ? "Check your email for reset instructions"
+              : "Enter your email to receive a password reset link"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === "request" ? (
+          {!emailSent ? (
             <form onSubmit={handleRequestReset} className="space-y-4">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {success && (
-                <Alert className="bg-green-50 border-green-200">
-                  <AlertDescription className="text-green-800">
-                    {success}
-                  </AlertDescription>
                 </Alert>
               )}
 
@@ -158,9 +121,9 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 className="w-full cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
-                disabled={isLoading || !isRequestFormValid}
+                disabled={isLoading || !isFormValid}
               >
-                {isLoading ? "Sending code..." : "Send Reset Code"}
+                {isLoading ? "Sending..." : "Send Reset Link"}
               </Button>
 
               <div className="space-y-2 text-center text-sm">
@@ -171,117 +134,77 @@ export default function ForgotPasswordPage() {
                   </Link>
                 </p>
                 <p className="text-muted-foreground">
-                  Already have a code?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setStep("reset")}
-                    className="text-primary hover:underline"
-                  >
-                    Enter code
-                  </button>
+                  Don&apos;t have an account?{" "}
+                  <Link href="/signup" className="text-primary hover:underline">
+                    Sign up
+                  </Link>
                 </p>
               </div>
             </form>
           ) : (
-            <form onSubmit={handleConfirmReset} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            <div className="space-y-4">
+              <Alert className="bg-green-50 border-green-200">
+                <AlertDescription className="text-green-800">
+                  <div className="space-y-2">
+                    <p className="font-semibold">📧 Check your email!</p>
+                    <p>
+                      We&apos;ve sent a password reset link to{" "}
+                      <span className="font-mono font-semibold">{email}</span>
+                    </p>
+                    <p className="text-sm">
+                      Click the link in the email to reset your password. The
+                      link will expire in 1 hour.
+                    </p>
+                  </div>
+                </AlertDescription>
+              </Alert>
 
-              {success && (
-                <Alert className="bg-green-50 border-green-200">
-                  <AlertDescription className="text-green-800">
-                    {success}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <label htmlFor="code" className="text-sm font-medium">
-                  Verification Code
-                </label>
-                <input
-                  id="code"
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Enter 6-digit code"
-                  required
-                  maxLength={6}
-                  className="w-full px-3 py-2 border rounded-md font-mono text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Check your email for the verification code
-                </p>
+              <div className="bg-muted/50 border border-border rounded-md p-4 space-y-2">
+                <p className="text-sm font-medium">📍 What to do next:</p>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Open your email inbox</li>
+                  <li>Look for an email from AWS Quiz Platform</li>
+                  <li>Click the &quot;Reset Password&quot; button</li>
+                  <li>Enter your new password</li>
+                </ol>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="new-password" className="text-sm font-medium">
-                  New Password
-                </label>
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Min 8 characters, include uppercase, lowercase, number, and
-                  special character
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="confirm-password"
-                  className="text-sm font-medium"
+              <div className="space-y-3">
+                <Button
+                  onClick={handleResendEmail}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full"
                 >
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                  {isLoading ? "Sending..." : "Resend Email"}
+                </Button>
+
+                <div className="text-center text-sm">
+                  <Link
+                    href="/login"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    ← Back to Login
+                  </Link>
+                </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
-                disabled={isLoading || !isResetFormValid}
-              >
-                {isLoading ? "Resetting password..." : "Reset Password"}
-              </Button>
-
-              <div className="space-y-2 text-center text-sm">
-                <p className="text-muted-foreground">
-                  Didn&apos;t receive the code?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep("request");
-                      setCode("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                      setError("");
-                      setSuccess("");
-                    }}
+              <div className="text-xs text-muted-foreground text-center space-y-1 pt-2">
+                <p>
+                  💡 <strong>Tip:</strong> Check your spam folder if you
+                  don&apos;t see the email
+                </p>
+                <p>
+                  🔗 If you have the reset code, you can also{" "}
+                  <Link
+                    href="/reset-password"
                     className="text-primary hover:underline"
                   >
-                    Resend code
-                  </button>
+                    enter it manually here
+                  </Link>
                 </p>
               </div>
-            </form>
+            </div>
           )}
         </CardContent>
       </Card>
