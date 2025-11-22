@@ -35,7 +35,7 @@ Next.js 16 (App Router) → Cognito Auth → AppSync GraphQL → Lambda → Dyna
 ### AWS Services Used
 
 - **Frontend**: Next.js 16 (App Router with TypeScript)
-- **Authentication**: Amazon Cognito (User Pools + Groups)
+- **Authentication**: Amazon Cognito (User Pools + Groups + Custom Email Templates)
 - **API**: AWS AppSync (GraphQL API with 4 resolvers)
 - **Compute**: AWS Lambda (Node.js 20, 512MB, 30s timeout)
 - **Database**: Amazon DynamoDB (3 tables: Questions, QuizSessions, UserProgress)
@@ -51,7 +51,7 @@ Next.js 16 (App Router) → Cognito Auth → AppSync GraphQL → Lambda → Dyna
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS 4
-- **UI Components**: shadcn/ui (11 components)
+- **UI Components**: shadcn/ui (12 components)
 - **Auth**: AWS Amplify Auth
 - **Forms**: React Hook Form + Zod validation
 - **State**: React Context + TanStack Query
@@ -70,6 +70,7 @@ Next.js 16 (App Router) → Cognito Auth → AppSync GraphQL → Lambda → Dyna
 | ------------------ | ---------- | ------ | -------------------------------------------------- |
 | `quiz-selector`    | Node.js 20 | 512 MB | Random question selection (strips correct answers) |
 | `score-calculator` | Node.js 20 | 512 MB | Server-side scoring + session tracking             |
+| `custom-message`   | Node.js 20 | 512 MB | Cognito email customization (forgot password flow) |
 
 ---
 
@@ -94,9 +95,14 @@ cd AWS-Cert-Quiz-Platform
 
 ⚠️ **CRITICAL**: Install dependencies before deploying infrastructure (Terraform packages them into ZIPs).
 
-```bash
+```powershell
+# Use build script (recommended)
+.\scripts\build-lambdas.ps1
+
+# OR manually:
 cd lambdas/quiz-selector && npm install && cd ../..
 cd lambdas/score-calculator && npm install && cd ../..
+cd lambdas/custom-message && npm install && npm run build && cd ../..
 ```
 
 ### 3. Deploy Infrastructure with Terraform
@@ -163,31 +169,34 @@ npm run dev
 aws-cert-quiz-platform/
 ├── docs/                         # 📚 Complete documentation
 │   ├── README.md                 # Documentation index
+│   ├── CHANGELOG.md              # Version history
 │   ├── architecture/             # System design docs
 │   │   ├── system-overview.md
 │   │   └── authentication.md
 │   ├── deployment/               # Deployment guides
 │   │   ├── README.md
 │   │   ├── troubleshooting.md
-│   │   └── email-templates.md
+│   │   ├── email-templates.md
+│   │   └── forgot-password-lambda.md
 │   └── development/              # Developer guides
-│       ├── frontend-guide.md
 │       ├── graphql-integration.md
+│       ├── forgot-password-flow.md
 │       └── colors.md
 ├── frontend/                     # Next.js 16 App
 │   ├── app/                      # App Router
-│   │   ├── (auth)/               # Login/Signup
-│   │   ├── (dashboard)/          # Quiz, history, progress
-│   │   └── admin/                # Admin panel (future)
+│   │   ├── (auth)/               # Auth routes: login, signup, forgot-password, reset-password
+│   │   ├── (dashboard)/          # Protected routes: dashboard, quiz, history, progress, settings
+│   │   └── admin/                # Admin routes: analytics, generation, questions (Phase 2)
 │   ├── components/
-│   │   ├── ui/                   # shadcn/ui components
-│   │   ├── quiz/                 # Quiz components
-│   │   └── auth/                 # Auth components
+│   │   ├── ui/                   # shadcn/ui components (12 components)
+│   │   ├── quiz/                 # QuizSelector, QuestionCard
+│   │   ├── auth/                 # HomeRedirect
+│   │   └── admin/                # Admin components (Phase 2)
 │   ├── lib/
-│   │   ├── auth/                 # Amplify config
-│   │   ├── graphql/              # GraphQL client
-│   │   └── utils.ts
-│   └── types/                    # TypeScript types
+│   │   ├── auth/                 # Amplify config, AuthContext, ProtectedRoute
+│   │   └── graphql/              # GraphQL client, queries, quiz-service
+│   ├── types/                    # TypeScript type definitions
+│   └── public/                   # Static assets
 ├── infrastructure/
 │   └── terraform/
 │       ├── main.tf               # Main config
@@ -199,7 +208,8 @@ aws-cert-quiz-platform/
 │       └── email-templates/      # Custom email HTML
 ├── lambdas/
 │   ├── quiz-selector/            # Question selection
-│   └── score-calculator/         # Scoring logic
+│   ├── score-calculator/         # Scoring logic
+│   └── custom-message/           # Cognito email customization
 ├── scripts/
 │   ├── generate-questions.py    # Bedrock AI generation
 │   └── seed-questions.py         # Batch DynamoDB upload
@@ -230,7 +240,7 @@ aws-cert-quiz-platform/
 ### User Roles
 
 - **Users** (default): Take quizzes, view progress, access history
-- **Admins** (manual assignment): Question management, analytics (Phase 3)
+- **Admins** (manual assignment): Advanced analytics, AI recommendations, question management (Phase 2)
 
 ### Creating Admin Users
 
@@ -318,27 +328,35 @@ See [Testing Guide](./docs/development/testing.md) for comprehensive testing str
 
 ## 🚧 Current Status
 
-**Phase 2 Deployed** ✅ (November 2025)
+**Phase 1: Core Quiz Platform** 🚧 (In Progress - November 2025)
 
 ### Completed ✅
 
 - [x] Complete Terraform infrastructure (Cognito, DynamoDB, AppSync, Lambda)
 - [x] Next.js 16 frontend with App Router + TypeScript
 - [x] Authentication flow (signup, login, email verification, password reset)
-- [x] Lambda functions (quiz-selector, score-calculator with domain analytics)
+- [x] Lambda functions (quiz-selector, score-calculator, custom-message)
 - [x] GraphQL API with 4 resolvers
-- [x] Dashboard with quiz history and progress tracking
-- [x] AI question generation with Amazon Bedrock (Claude 3.5 Sonnet)
-- [x] Custom email templates for Cognito
-- [x] shadcn/ui component library (11 components)
+- [x] Custom email templates for Cognito (forgot password flow)
 - [x] Domain-based question distribution
 - [x] Server-side scoring (security-first design)
+- [x] shadcn/ui component library (12 components)
 
-### In Progress �
+### In Progress 🚧
 
-- [ ] Admin panel for question management (Phase 3)
+- [ ] Quiz completion flow (submit and save results)
+- [ ] Quiz history storage and display
+- [ ] Progress tracking dashboard validation
+
+### Phase 2: AI-Powered Analytics & Admin Panel 💡 (Planned)
+
+- [ ] Advanced score analysis dashboard
+- [ ] AI-powered study recommendations (Amazon Bedrock)
+- [ ] Personalized suggestions based on weak domains
+- [ ] Performance trends and insights visualization
+- [ ] Admin panel for question management
+- [ ] Automated question generation with Bedrock (Claude 3.5 Sonnet)
 - [ ] Question approval workflow
-- [ ] Advanced analytics dashboard
 - [ ] Automated weekly question generation (EventBridge)
 
 ### Future Enhancements 💡
@@ -408,9 +426,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Metrics
 
-- **Lines of Code**: ~15,000
 - **AWS Services Used**: 7 (Cognito, AppSync, Lambda, DynamoDB, Bedrock, CloudWatch, IAM)
-- **Lambda Functions**: 2
+- **Lambda Functions**: 3
 - **DynamoDB Tables**: 3
 - **GraphQL Resolvers**: 4
 - **Frontend Components**: 25+
