@@ -1,424 +1,262 @@
 # AWS Certification Quiz Platform - AI Agent Instructions
 
-## Project Overview
+> **Quick Context**: Serverless AWS exam prep platform with Next.js 16 frontend, Terraform-managed AWS infrastructure (AppSync GraphQL, Cognito, Lambda, DynamoDB), and Bedrock-powered question generation.
 
-Serverless AWS certification exam prep platform built with **Next.js 16**, **Terraform**, **AWS AppSync**, and **Amazon Bedrock**. Features include quiz interface, admin panel, automated question generation, and role-based access control.
+## 🎯 Project Status & Phase Control
 
-**Current Status** (Phase 2 - Backend Deployed):
+**Current Phase**: `article-1` (Backend fully deployed: Cognito, AppSync, Lambda, DynamoDB in `us-east-1`)
+**Next Phase**: `article-2` (Admin panel with Bedrock AI generation + EventBridge)
 
-- ✅ Next.js 16 frontend with 11 shadcn/ui components (QuizSelector, QuestionCard)
-- ✅ Complete landing page with responsive design
-- ✅ Route structure for auth, dashboard, and admin
-- ✅ TypeScript types for Question, QuizSession, UserProgress
-- ✅ **Backend infrastructure deployed** (Cognito, AppSync, DynamoDB, Lambda)
-- ✅ **GraphQL schema with 4 resolvers** (getQuizQuestions, submitQuiz, getUserProgress, getQuizHistory)
-- ✅ **2 Lambda functions implemented** (quiz-selector, score-calculator)
-- 🚧 Frontend integration with AppSync (GraphQL client setup in progress)
-- 🚧 Question seeding script (generate-questions.py ready, needs execution)
-- 🚧 Interactive quiz UI with real data (Phase 2 completion)
+**Phase Progression** (controlled via `terraform apply -var="article_phase=article-X"`):
 
-## Architecture & Data Flow
+- `article-1` → Cognito + Amplify Auth only + DynamoDB + Lambda + AppSync (CURRENT)
+- `article-2` → + Bedrock + EventBridge (future)
+
+## 🏗️ Architecture & Critical Data Flows
+
+**Security-First Design**: Questions return WITHOUT `correctAnswers` during quiz; scoring happens server-side only.
 
 ```
-Next.js 16 (Amplify) → Cognito → AppSync GraphQL → Lambda → DynamoDB
-                                                     ↓
-                                              Bedrock (Claude 3.5 Sonnet v2)
-                                                     ↓
-                                       EventBridge → SNS → Admins
+User Browser → Next.js 16 (App Router) → Amplify Auth (JWT) → AppSync GraphQL → Lambda → DynamoDB
+                                                                                    ↓
+                                                                            Bedrock (Claude 3.5)
 ```
 
-### AWS Services Stack
+**Critical Security Flow**:
 
-- **Frontend**: AWS Amplify hosting (Next.js 16 App Router)
-- **Auth**: Amazon Cognito User Pools (Groups: `Users`, `Admins`)
-- **API**: AWS AppSync (GraphQL with authorization rules)
-- **Compute**: AWS Lambda (Node.js 20 + Python 3.12)
-- **Database**: Amazon DynamoDB (6 planned tables)
-- **AI**: Amazon Bedrock (Claude 3.5 Sonnet v2 - Model ID: `anthropic.claude-3-5-sonnet-20241022-v2:0`)
-- **Automation**: Amazon EventBridge (weekly question generation)
-- **IaC**: Terraform 1.9+ (AWS Provider ~> 5.0)
+1. `getQuizQuestions` (quiz-selector Lambda) strips `correctAnswers` before returning to client
+2. User submits answers → `submitQuiz` (score-calculator Lambda) fetches full questions server-side
+3. Scoring happens server-side only → results returned with explanations
 
-### DynamoDB Tables (Planned)
+### AWS Services Stack (us-east-1)
 
-- `Questions` - Question bank (1,200 initial questions, status: approved/pending/archived)
-- `UserProgress` - Per-user domain scores and history
-- `QuizSessions` - Quiz attempts with timestamps
-- `BackgroundJobs` - Generation job tracking
-- `Users` - User metadata
-- `Analytics` - Question performance metrics
+| Service      | Config                 | Purpose                                                  |
+| ------------ | ---------------------- | -------------------------------------------------------- |
+| **Cognito**  | User Pool + Groups     | Auth (Groups: Users, Admins) + Custom email templates    |
+| **AppSync**  | GraphQL API            | 4 resolvers (query + mutation)                           |
+| **Lambda**   | Node.js 20, 512MB, 30s | 3 functions: question selection, scoring, custom-message |
+| **DynamoDB** | On-demand billing      | 3 tables: Questions, QuizSessions, UserProgress          |
+| **Bedrock**  | `claude-3-5-sonnet-v2` | AI question generation (~$0.015/question)                |
 
-## Development Workflows
+**Live Resource IDs**: Always check `infrastructure/terraform/outputs.json` after deployment
 
-### Frontend Development (Active)
+## 🚀 Critical Developer Workflows
+
+### Frontend Development
 
 ```powershell
 cd frontend
-npm install
-npm run dev  # Starts on localhost:3000
-npm run build  # Production build
-npm run lint  # ESLint check
+npm install              # Install dependencies
+npm run dev             # Dev server → http://localhost:3000
+npm run build           # Production build
+npm run lint            # ESLint check
+npx shadcn@latest add <component>  # Add UI components
 ```
 
-**Adding shadcn/ui components**:
+**Installed shadcn/ui components**: button, card, badge, radio-group, checkbox, progress, tabs, table, dialog, select, alert
+
+**No test suite configured yet** - Tests planned for Phase 3
+
+### Infrastructure Deployment
+
+**⚠️ CRITICAL ORDER**: Install Lambda dependencies BEFORE Terraform (it packages them into ZIPs)
 
 ```powershell
-npx shadcn@latest add <component-name>
-```
+# 1. Install Lambda deps FIRST (use build script)
+.\scripts\build-lambdas.ps1
+# OR manually:
+cd lambdas/quiz-selector && npm install && cd ../..
+cd lambdas/score-calculator && npm install && cd ../..
+cd lambdas/custom-message && npm install && npm run build && cd ../..
 
-Currently installed: button, card, badge, radio-group, checkbox, progress, tabs, table, dialog, select, alert
-
-### Infrastructure Deployment (DEPLOYED - Article 2 Complete)
-
-**Current Deployment Status**:
-
-- ✅ Terraform infrastructure deployed to AWS (us-east-1)
-- ✅ Cognito User Pool: `us-east-1_XNLodSkoE`
-- ✅ AppSync API: `https://ztjeab3ravhhjkwfk2fam5ud5a.appsync-api.us-east-1.amazonaws.com/graphql`
-- ✅ DynamoDB Tables: Questions, QuizSessions, UserProgress
-- ✅ Lambda Functions: quiz-selector, score-calculator
-- ⚠️ CloudWatch Alarms disabled (requires IAM permissions - see `DEPLOYMENT-FIXES.md`)
-
-**Deployment Commands**:
-
-```powershell
+# 2. Deploy infrastructure
 cd infrastructure/terraform
 terraform init
-terraform plan -var="article_phase=article-2"  # Verify changes
+terraform plan -var="article_phase=article-2"
 terraform apply -var="article_phase=article-2" -auto-approve
+terraform output -json > outputs.json
+
+# 3. Configure frontend (copy outputs to .env.local)
 ```
 
-**Phase Control Variable**:
+**Phase Control** (`article_phase` variable):
 
-- `article_phase="article-1"` → Cognito + Amplify only
-- `article_phase="article-2"` → + DynamoDB + Lambda + AppSync (CURRENT)
-- `article_phase="article-3"` → + Bedrock + EventBridge (FUTURE)
+- `article-1` → Cognito + Amplify only
+- `article-2` → + DynamoDB + Lambda + AppSync (CURRENT)
+- `article-3` → + Bedrock + EventBridge (future)
 
-**Known Issues**:
+**Known Issues** (see `docs/deployment/troubleshooting.md`):
 
-1. **Cognito Domain**: Cannot use "aws" prefix (reserved word) - using `cert-quiz-*` instead
-2. **CloudWatch Alarms**: Commented out in `dynamodb.tf` and `lambda.tf` (needs `cloudwatch:PutMetricAlarm` IAM permission)
-3. **Amplify Hosting**: Not deployed (requires `github_repository_url` variable)
+- CloudWatch Alarms commented out (need IAM permission for `cloudwatch:PutMetricAlarm`)
+- Cognito domain uses `cert-quiz-*` prefix (AWS rejects "aws" as reserved word)
+- Amplify hosting disabled (needs `github_repository_url` variable)
 
-### Lambda Development (IMPLEMENTED)
+### Environment Setup
 
-**Current Lambda Functions**:
+Create `frontend/.env.local` from Terraform outputs (see `infrastructure/terraform/outputs.json`):
 
-```
-lambdas/
-├── quiz-selector/           # Node.js 20, 512MB - Random question selection ✅
-│   ├── index.ts            # Main handler with weighted domain distribution
-│   ├── package.json        # Dependencies: @aws-sdk/client-dynamodb
-│   └── tsconfig.json
-└── score-calculator/        # Node.js 20, 512MB - Multi-answer scoring ✅
-    ├── index.ts            # Scoring logic + DynamoDB session storage
-    ├── package.json        # Dependencies: @aws-sdk/client-dynamodb
-    └── tsconfig.json
+```bash
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_XNLodSkoE
+NEXT_PUBLIC_COGNITO_CLIENT_ID=3eiuep4c75cccvm1vrielhl799
+NEXT_PUBLIC_APPSYNC_GRAPHQL_ENDPOINT=https://ztjeab3ravhhjkwfk2fam5ud5a.appsync-api.us-east-1.amazonaws.com/graphql
+NEXT_PUBLIC_AWS_REGION=us-east-1
 ```
 
-**Lambda Function Details**:
+**Note**: Values above are example IDs - always use current values from `terraform output -json`
 
-1. **quiz-selector** (`lambdas/quiz-selector/index.ts`):
+### Lambda Development
 
-   - Queries DynamoDB Questions table by examType
-   - Distributes questions evenly across domains
-   - Shuffles questions for randomization
-   - Returns question data WITHOUT correct answers (security)
-   - Connected to AppSync resolver: `getQuizQuestions`
+**quiz-selector** (220 lines): Queries DynamoDB by `examType`, distributes questions across domains, shuffles, returns WITHOUT `correctAnswers`
 
-2. **score-calculator** (`lambdas/score-calculator/index.ts`):
-   - Fetches questions with correct answers from DynamoDB
-   - Calculates scores based on question type:
-     - Single/True-False: 1 point if exact match
-     - Multiple-choice: 1 point only if ALL correct selected AND NO incorrect selected
-   - Stores QuizSession in DynamoDB
-   - Updates UserProgress with domain-level analytics
-   - Connected to AppSync resolver: `submitQuiz`
+**score-calculator** (373 lines): Fetches questions WITH `correctAnswers`, scores (no partial credit for multi-choice), stores sessions, updates UserProgress
 
-**Installing Lambda Dependencies** (required before Terraform deploy):
+**custom-message** (274 lines): Cognito trigger for customizing emails; handles `ForgotPassword` event to send reset link with embedded code in URL
 
-```powershell
-cd lambdas/quiz-selector
-npm install
+**Env vars** (auto-set by Terraform): `QUESTIONS_TABLE_NAME`, `QUIZ_SESSIONS_TABLE_NAME`, `USER_PROGRESS_TABLE_NAME`, `LOG_LEVEL`, `AWS_REGION`, `FRONTEND_URL` (custom-message only)
 
-cd ../score-calculator
-npm install
-```
+**Development pattern**:
 
-**Important**: Terraform packages Lambda code into ZIP files. Dependencies must be installed locally before deployment.
+- Use JSDoc comments for all exported functions
+- Logger utility with levels: `logger.info()`, `logger.error()`, `logger.debug()`
+- Always unmarshall DynamoDB responses with `@aws-sdk/util-dynamodb`
+- Return `{ statusCode, body }` format for AppSync Lambda resolvers
+- **custom-message**: Must build TypeScript BEFORE Terraform (`npm run build` generates `index.js`)
 
-### Question Generation Workflow (READY - Not Yet Executed)
-
-**Setup**: Python script ready at `scripts/generate-questions.py`
-
-1. EventBridge triggers weekly (Sunday 2 AM) OR admin manual trigger
-2. Python Lambda calls Bedrock to generate 50 questions
-3. Questions stored in DynamoDB with `status="pending-review"`
-4. SNS notification sent to admin team
-5. Admins review/approve via admin panel at `/admin/questions/pending`
-
-**Manual Execution** (for seeding initial questions):
+### Question Generation (Python + Bedrock)
 
 ```powershell
 cd scripts
 pip install -r requirements.txt
-
-# Generate 50 questions for Developer Associate exam
 python generate-questions.py --exam-type Developer-Associate --count 50 --region us-east-1
 ```
 
-**Important Configuration**:
+**Config**: Claude 3.5 Sonnet v2, 4096 tokens, temp 1.0, ~$0.015/question. Questions created with `status="pending-review"` for admin approval.
 
-- **Bedrock Model**: `anthropic.claude-3-5-sonnet-20241022-v2:0`
-- **Max Tokens**: 4096
-- **Temperature**: 1.0 (high creativity for question variety)
-- **Cost Estimate**: ~$0.015 per question generated
-- **Target**: 1,200 questions across 3 exam types ($18-20 one-time cost)
+**Dependencies**: `boto3` for AWS SDK, requires Bedrock model access enabled in console for `anthropic.claude-3-5-sonnet-20241022-v2:0`
 
 ## Project-Specific Conventions
 
-### Frontend (Next.js 16) - Current Implementation
+### Next.js 16 Patterns
 
-- **App Router**: Use `app/` directory structure (not `pages/`)
-- **Path Aliases**: `@/*` maps to project root (configured in `tsconfig.json`)
-  - Example: `import { Button } from "@/components/ui/button"`
-- **Styling**: Tailwind CSS 4 with custom CSS variables in `globals.css`
-- **Color System**: AWS-branded theme (see `frontend/COLORS.md`)
-  - Primary: AWS Orange (`oklch(0.72 0.17 50)`)
-  - Secondary: AWS Blue (`oklch(0.55 0.15 250)`)
-  - Use semantic tokens: `bg-primary`, `text-muted-foreground`
-- **Fonts**: Geist Sans & Geist Mono loaded via `next/font/google` in `layout.tsx`
-- **TypeScript**: Strict mode enabled, target ES2017
-- **Component Pattern**: Use `cn()` utility from `lib/utils.ts` for className merging
-  - Example: `cn("base-class", conditional && "conditional-class", className)`
+- **TypeScript**: Strict mode, no `any` types (`tsconfig.json`)
+- **Path Aliases**: `@/*` maps to root (e.g., `@/components/ui/button`)
+- **Server Components**: Default; only use `"use client"` for event handlers, hooks, browser APIs
+- **Route Groups**: `(auth)`, `(dashboard)` organize routes without URL impact
+- **shadcn/ui**: "new-york" variant, lucide-react icons, `cn()` utility for className merging
 
-### shadcn/ui Configuration
-
-- **Style**: "new-york" variant
-- **RSC**: Enabled (React Server Components)
-- **Base Color**: Neutral
-- **Icon Library**: lucide-react (tree-shakeable)
-- **Config Location**: `frontend/components.json`
-
-### Component Organization (Implemented)
+### Component Organization
 
 ```
 components/
-├── ui/          # shadcn/ui primitives (11 components installed)
-├── quiz/        # Quiz-specific components
-│   ├── QuizSelector.tsx       # Exam type + question count selector ✅
-│   └── QuestionCard.tsx       # Individual question display ✅
-├── admin/       # Admin dashboard components (empty - Phase 3)
-└── auth/        # Authentication forms (empty - Phase 2)
+├── ui/          # shadcn primitives (install via CLI)
+├── quiz/        # QuizSelector.tsx, QuestionCard.tsx
+├── admin/       # Admin components (Phase 3)
+└── auth/        # Auth forms + HomeRedirect.tsx
 ```
 
-When creating new components:
+**Naming convention**: PascalCase for components, kebab-case for directories
 
-- UI primitives go in `ui/` (use shadcn/ui CLI)
-- Feature components go in domain folders (`quiz/`, `admin/`, `auth/`)
-- Prefer composition over prop drilling
-- Use TypeScript interfaces for component props
-- Mark client components with `"use client"` directive only when needed
+### GraphQL Client Pattern
 
-### Route Structure (Implemented)
-
-The app uses Next.js 16 route groups for logical organization:
-
-```
-app/
-├── (auth)/                  # Login/signup pages (placeholders)
-│   ├── login/page.tsx
-│   └── signup/page.tsx
-├── (dashboard)/             # Quiz, progress, history (placeholders)
-│   ├── quiz/page.tsx
-│   ├── progress/page.tsx
-│   └── history/page.tsx
-└── admin/                   # Admin panel (Cognito Admins group only)
-    ├── questions/page.tsx   # Question management (placeholder)
-    ├── analytics/           # Question stats (Phase 3)
-    ├── generation/          # Background jobs (Phase 3)
-    └── questions/
-        ├── [id]/            # Edit question (Phase 3)
-        ├── new/             # Create question (Phase 3)
-        └── pending/         # Review queue (Phase 3)
-```
-
-**Route Groups** (parentheses don't appear in URL):
-
-- `(auth)` - Public auth pages, no shared layout yet
-- `(dashboard)` - User-facing features, will share nav layout
-- `admin` - Admin-only features, will require Cognito Admins group
-
-**Current Pages**:
-
-- `app/page.tsx` - Complete landing page with hero, features, tech stack sections
-- All other pages show "Coming in Article X" placeholders
-
-### Authentication & Authorization
-
-- **User Creation**: Sign up via Cognito, default to `Users` group
-- **Admin Promotion**: Use AWS CLI or Console to add users to `Admins` group
-  ```powershell
-  aws cognito-idp admin-add-user-to-group `
-    --user-pool-id <POOL_ID> `
-    --username <EMAIL> `
-    --group-name Admins `
-    --region us-east-1
-  ```
-- **AppSync Authorization**: Group-based rules (e.g., admin mutations require `Admins` group)
-
-### Question Types & Scoring
-
-1. **Single Choice** - One correct answer
-2. **Multiple Choice** - Multiple correct answers (partial credit not awarded)
-3. **True/False** - Boolean answer
-4. **Scenario-Based** - Context + single/multiple choice
-
-**Scoring Logic** (in `score-calculator` Lambda):
-
-- Single/True-False: 1 point if correct, 0 otherwise
-- Multiple choice: 1 point only if ALL correct answers selected and NO incorrect answers selected
-
-### Type System (Implemented in `frontend/types/index.ts`)
-
-The project uses comprehensive TypeScript types for type safety:
+**Auto JWT injection** in `lib/graphql/client.ts`:
 
 ```typescript
-// Core types defined and ready to use
-QuestionType: "single-choice" |
-  "multiple-choice" |
-  "true-false" |
-  "scenario-based";
-QuestionStatus: "pending" | "approved" | "rejected" | "archived";
-ExamType: "Developer-Associate" |
-  "Solutions-Architect-Associate" |
-  "SysOps-Administrator-Associate";
-
-// Main interfaces
-interface Question {
-  id: string;
-  examType: ExamType;
-  domain: string;
-  questionType: QuestionType;
-  correctAnswers: string[]; // ["A"] or ["A", "C"]
-  options: QuestionOption[];
-  explanation: string;
-  references: string[];
-  status: QuestionStatus;
-  // ... analytics and metadata fields
-}
-
-interface QuizSession {
-  id: string;
-  userId: string;
-  questions: Question[];
-  userAnswers: Record<string, string[]>; // questionId -> selected IDs
-  // ... scoring fields
-}
+const session = await fetchAuthSession();
+const token = session.tokens?.idToken?.toString();
+// Token sent in Authorization header to AppSync
 ```
 
-**Always import types from**: `@/types` (not inline definitions)
-**Question IDs format**: `\${examType}#Q\${number}` (e.g., `Developer-Associate#Q001`)
+**Usage**:
 
-### Cost Optimization Principles
+```typescript
+import { graphqlRequest } from "@/lib/graphql/client";
+import { GET_QUIZ_QUESTIONS } from "@/lib/graphql/queries";
 
-- **Pre-generate questions**: Store in DynamoDB instead of real-time Bedrock calls (<100ms loads)
-- **Lambda memory**: Right-size (512MB for CRUD, 2048MB for Bedrock)
-- **DynamoDB**: On-demand pricing for dev, provisioned for production
-- **Target**: $15-25/month for 500 active users (vs. $125+ for EC2+RDS)
+const { questions } = await graphqlRequest({
+  query: GET_QUIZ_QUESTIONS,
+  variables: { examType: "Developer-Associate", questionCount: 20 },
+});
+```
 
-## Key Files & Directories
+### TypeScript Types
 
-### Configuration Files
+Import from `@/types/index.ts`:
 
-- `frontend/next.config.ts` - Next.js configuration (currently minimal)
-- `frontend/tsconfig.json` - TypeScript with strict mode, path aliases
-- `frontend/package.json` - Dependencies: React 19.2, Next.js 16.0.1, Tailwind 4
-- `infrastructure/terraform/main.tf` - Terraform entry point with phase control
+- `QuestionType`: "single-choice" | "multiple-choice" | "true-false" | "scenario-based"
+- `ExamType`: "Developer-Associate" | "Solutions-Architect-Associate" | "SysOps-Administrator-Associate"
+- `QuestionStatus`: "pending" | "approved" | "rejected" | "archived"
+
+**Question IDs**: Format is `ExamType#Q<number>` for DynamoDB queries
+
+### Authentication
+
+**User Roles**: `Users` (default), `Admins` (manual via CLI)
+
+**Promote to admin**:
+
+```powershell
+aws cognito-idp admin-add-user-to-group `
+  --user-pool-id us-east-1_XNLodSkoE `
+  --username user@example.com `
+  --group-name Admins `
+  --region us-east-1
+```
+
+**Forgot Password Flow** (Industry-standard UX):
+
+1. User enters email on `/forgot-password` → receives email with reset link
+2. Email contains: Reset button + 6-digit code (visible as fallback)
+3. Link format: `/reset-password?code=123456&email=user@example.com`
+4. Form auto-fills email/code from URL params (one-click UX)
+5. User enters new password → success toast → auto-redirect to `/login`
+
+**Implementation**: CustomMessage Lambda (`lambdas/custom-message`) triggered by Cognito `ForgotPassword` event generates HTML email with embedded reset link. See `docs/development/forgot-password-flow.md` for security best practices.
+
+### Color System
+
+See `docs/development/colors.md`. Key tokens:
+
+- Primary: AWS Orange (`oklch(0.72 0.17 50)`)
+- Secondary: AWS Blue (`oklch(0.55 0.15 250)`)
+- Use semantic tokens: `bg-primary`, `text-muted-foreground`, `border-input`
+
+## Key Files Reference
+
+### Configuration
+
+- `infrastructure/terraform/outputs.json` - Live AWS resource IDs
 - `infrastructure/terraform/schema.graphql` - AppSync GraphQL schema (4 resolvers)
-- `infrastructure/terraform/outputs.json` - Live deployment outputs (Cognito, AppSync endpoints)
-- `README.md` - Comprehensive project documentation
-- `DEPLOYMENT.md` - Step-by-step deployment guide with AWS credential setup
-- `DEPLOYMENT-FIXES.md` - Known issues and their resolutions
+- `docs/deployment/troubleshooting.md` - Known deployment issues
+- `frontend/types/index.ts` - TypeScript type definitions
+- `frontend/lib/graphql/client.ts` - GraphQL client with auto JWT
+- `frontend/lib/graphql/queries.ts` - Query/mutation definitions
 
-### Backend Implementation (Completed)
+### Lambda Functions
 
-- **Terraform Modules**: Deployed to us-east-1 (35+ resources)
-  - `cognito.tf` - User pools with Users/Admins groups
-  - `dynamodb.tf` - Questions, QuizSessions, UserProgress tables
-  - `lambda.tf` - quiz-selector and score-calculator functions
-  - `appsync.tf` - GraphQL API with Cognito auth
-- **Lambda Functions**: 2 functions implemented and deployed
-  - `lambdas/quiz-selector/index.ts` - 220 lines, query + domain distribution
-  - `lambdas/score-calculator/index.ts` - 373 lines, scoring + DynamoDB updates
-- **GraphQL Schema**: Complete with @aws_cognito_user_pools directives
-  - Queries: getQuizQuestions, getUserProgress, getQuizHistory
-  - Mutations: submitQuiz
-- **Python Scripts**: Ready for question generation
-  - `scripts/generate-questions.py` - 403 lines, Bedrock integration
-  - `scripts/seed-questions.py` - Batch upload to DynamoDB
+- `lambdas/quiz-selector/index.ts` - Question selection + distribution
+- `lambdas/score-calculator/index.ts` - Scoring + analytics
+- `lambdas/custom-message/index.ts` - Cognito email customization (TypeScript → compile to `index.js`)
 
-## Testing Strategy (Planned)
+### Scripts
 
-### Unit Tests (Vitest)
-
-```powershell
-npm run test          # Run tests
-npm run test:watch    # Watch mode
-npm run test:coverage # Coverage report
-```
-
-### E2E Tests (Playwright)
-
-```powershell
-npx playwright install
-npm run test:e2e      # Run E2E tests
-npm run test:e2e:ui   # UI mode
-```
-
-**Coverage Goals**: Quiz selection logic, scoring algorithms, admin approval workflow, auth flows, progress tracking.
+- `scripts/generate-questions.py` - Bedrock AI generation
+- `scripts/seed-questions.py` - Batch DynamoDB upload
+- `scripts/build-lambdas.ps1` - Builds all Lambda functions (installs deps + compiles TypeScript)
 
 ## Common Pitfalls
 
-1. **Lambda Dependencies**: Install `node_modules` locally before Terraform deployment (Terraform packages them into zip files)
-2. **Bedrock Access**: Ensure AWS account has Bedrock enabled in `us-east-1` and model access granted for Claude 3.5 Sonnet
-3. **Cognito Groups**: Users must be manually added to `Admins` group; group assignment is NOT automatic
-4. **AppSync Caching**: Test authorization rules thoroughly; incorrect rules can expose admin operations
-5. **DynamoDB Schema**: Question IDs must include exam type (e.g., `DEV-ASSOC#Q001`) for domain filtering
-6. **Cost Monitoring**: Track Bedrock token usage during generation jobs (~$0.015 per question)
+1. **Lambda Dependencies**: Install `node_modules` locally BEFORE `terraform apply` (Terraform packages into ZIPs)
+2. **Bedrock Access**: Ensure model access in `us-east-1` for `claude-3-5-sonnet-v2`
+3. **Cognito Groups**: Users NOT auto-added to `Admins`; use AWS CLI manually
+4. **Question IDs**: Must follow `ExamType#Q<number>` format for DynamoDB querying
+5. **Cost Monitoring**: Bedrock ~$0.015/question ($18 for 1,200 questions)
 
-## AI Agent Guidance
+## AI Code Generation Guidelines
 
-When generating code for this project:
-
-- **Frontend**: Use Next.js 16 App Router patterns, TypeScript strict mode, Tailwind utility classes
-- **Infrastructure**: Generate Terraform with AWS Provider 5.x syntax, use modules for reusability
-- **Lambda**: Node.js 20 for CRUD, Python 3.12 for Bedrock; include JSDoc/docstrings
-- **GraphQL**: Define schema with AppSync-specific directives (`@auth`, `@aws_cognito_user_pools`)
-- **Components**: When adding shadcn/ui, install via `npx shadcn@latest add <component>`
-- **State Management**: Prefer React Context + TanStack Query over Redux for this scale
-- **Forms**: Use React Hook Form + Zod for validation
-
-Prioritize serverless best practices: idempotency, minimal cold starts, cost optimization, and security (least privilege IAM policies).
-
-## Current Phase: MVP (Weeks 1-3)
-
-**Completed**:
-
-- ✅ Repository structure
-- ✅ Next.js 16 frontend bootstrapped
-- ✅ Documentation (README, roadmap, articles)
-- ✅ Terraform infrastructure modules (Cognito, AppSync, DynamoDB, Lambda, EventBridge)
-- ✅ 2 Lambda functions deployed (quiz-selector, score-calculator)
-- ✅ GraphQL schema with 4 resolvers
-
-**In Progress**:
-
-- [ ] Frontend integration with AppSync (GraphQL client setup)
-- [ ] Question seeding (generate-questions.py execution)
-- [ ] Interactive quiz UI with real backend data
-
-**Next Steps** (Phase 3):
-
-- Build admin panel (weeks 7-9)
-- Background question generation with Bedrock + EventBridge
-- E2E testing & production deployment (week 10)
+- **Frontend**: Next.js 16 App Router, TypeScript strict mode, Tailwind, shadcn/ui via `npx shadcn@latest add`
+- **Infrastructure**: Terraform AWS Provider 5.x, modular design
+- **Lambda**: Node.js 20 with JSDoc comments, Python 3.12 for Bedrock
+- **GraphQL**: AppSync directives (`@aws_cognito_user_pools`)
+- **State**: React Context + TanStack Query (avoid Redux for this scale)
+- **Forms**: React Hook Form + Zod validation
+- **Serverless Best Practices**: Idempotency, minimal cold starts, least privilege IAM
