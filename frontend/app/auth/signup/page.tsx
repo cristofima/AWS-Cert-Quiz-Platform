@@ -148,15 +148,11 @@ export default function SignupPage() {
         console.log("Manual sign-in successful");
       }
 
-      console.log("Signup complete, refreshing user context...");
-
       // Refresh user context to update authentication state
       await refreshUser();
 
-      console.log("User context refreshed, redirecting to quiz...");
-
-      // Redirect to quiz page after successful login
-      router.push("/quiz");
+      // Redirect to dashboard after successful signup
+      router.replace("/portal/dashboard");
     } catch (err: unknown) {
       console.error("Confirmation error:", err);
 
@@ -298,7 +294,7 @@ export default function SignupPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/auth/login" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

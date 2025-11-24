@@ -25,7 +25,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {user?.name || user?.username || "User"}!
+          Welcome back, {user?.email?.split("@")[0] || "User"}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Ready to practice for your AWS certification exam?
@@ -42,7 +42,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/quiz">
+            <Link href="/portal/quiz">
               <Button className="w-full" size="lg">
                 <Target className="mr-2 h-5 w-5" />
                 Take Quiz
@@ -60,7 +60,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/history">
+            <Link href="/portal/history">
               <Button variant="outline" className="w-full" size="lg">
                 <History className="mr-2 h-5 w-5" />
                 View History

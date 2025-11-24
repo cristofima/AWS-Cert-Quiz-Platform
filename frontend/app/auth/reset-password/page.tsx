@@ -86,7 +86,7 @@ function ResetPasswordForm() {
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push("/login");
+        router.push("/auth/login");
       }, 2000);
     } catch (err) {
       console.error("Password reset confirmation error:", err);
@@ -249,7 +249,7 @@ function ResetPasswordForm() {
               <p className="text-muted-foreground">
                 Don&apos;t have a code?{" "}
                 <Link
-                  href="/forgot-password"
+                  href="/auth/forgot-password"
                   className="text-primary hover:underline"
                 >
                   Request new code
@@ -257,7 +257,7 @@ function ResetPasswordForm() {
               </p>
               <p className="text-muted-foreground">
                 Remember your password?{" "}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/auth/login" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

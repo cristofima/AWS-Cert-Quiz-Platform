@@ -129,13 +129,13 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2 text-center text-sm">
                 <p className="text-muted-foreground">
                   Remember your password?{" "}
-                  <Link href="/login" className="text-primary hover:underline">
+                  <Link href="/auth/login" className="text-primary hover:underline">
                     Sign in
                   </Link>
                 </p>
                 <p className="text-muted-foreground">
                   Don&apos;t have an account?{" "}
-                  <Link href="/signup" className="text-primary hover:underline">
+                  <Link href="/auth/signup" className="text-primary hover:underline">
                     Sign up
                   </Link>
                 </p>
@@ -181,7 +181,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="text-center text-sm">
                   <Link
-                    href="/login"
+                    href="/auth/login"
                     className="text-primary hover:underline font-medium"
                   >
                     ← Back to Login
@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
                 <p>
                   🔗 If you have the reset code, you can also{" "}
                   <Link
-                    href="/reset-password"
+                    href="/auth/reset-password"
                     className="text-primary hover:underline"
                   >
                     enter it manually here

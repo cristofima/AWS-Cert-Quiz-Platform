@@ -47,15 +47,11 @@ export default function LoginPage() {
         password,
       });
 
-      console.log("Login successful, refreshing user context...");
-
       // Refresh user context to update authentication state
       await refreshUser();
 
-      console.log("User context refreshed, redirecting to quiz...");
-
-      // Redirect to quiz page after successful login
-      router.push("/quiz");
+      // Redirect to dashboard after successful login
+      router.replace("/portal/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setError(
@@ -106,7 +102,7 @@ export default function LoginPage() {
                   Password
                 </label>
                 <Link
-                  href="/forgot-password"
+                  href="/auth/forgot-password"
                   className="text-xs text-primary hover:underline"
                 >
                   Forgot password?
@@ -133,7 +129,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
+              <Link href="/auth/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>

@@ -46,10 +46,7 @@ export default function QuizPage() {
 
     try {
       // Fetch real questions from AppSync GraphQL API
-      const fetchedQuestions = await fetchQuizQuestions({
-        examType: selectedExam,
-        questionCount: count,
-      });
+      const fetchedQuestions = await fetchQuizQuestions(selectedExam, count);
 
       if (fetchedQuestions.length === 0) {
         throw new Error(

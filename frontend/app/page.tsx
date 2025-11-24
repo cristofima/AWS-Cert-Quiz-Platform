@@ -44,7 +44,7 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <Button size="lg" asChild>
-                <Link href="/quiz">Start Practice Quiz</Link>
+                <Link href="/portal/quiz">Start Practice Quiz</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="#features">Learn More</Link>
@@ -236,7 +236,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" variant="secondary" asChild>
-                  <Link href="/signup">Get Started Free</Link>
+                  <Link href="/auth/signup">Get Started Free</Link>
                 </Button>
                 <Button
                   size="lg"
@@ -244,7 +244,7 @@ export default function Home() {
                   className="bg-primary-foreground text-primary border-primary-foreground hover:bg-primary-foreground/90 hover:text-primary/90"
                   asChild
                 >
-                  <Link href="/login">Sign In</Link>
+                  <Link href="/auth/login">Sign In</Link>
                 </Button>
               </div>
             </CardContent>

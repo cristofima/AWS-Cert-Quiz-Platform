@@ -256,7 +256,7 @@ export default function HistoryPage() {
                 Start taking quizzes to see your history here
               </p>
               <Button className="mt-4" asChild>
-                <a href="/quiz">Take Your First Quiz</a>
+                <a href="/portal/quiz">Take Your First Quiz</a>
               </Button>
             </div>
           ) : (

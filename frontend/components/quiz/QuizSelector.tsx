@@ -85,11 +85,11 @@ export function QuizSelector({
             <SelectContent>
               {Object.values(EXAM_CONFIGS).map((examConfig) => (
                 <SelectItem
-                  key={examConfig.examType}
-                  value={examConfig.examType}
+                  key={examConfig.id}
+                  value={examConfig.id}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span>{examConfig.label}</span>
+                    <span>{examConfig.name}</span>
                     <Badge variant="secondary" className="ml-2">
                       {examConfig.domains.length} domains
                     </Badge>
@@ -101,11 +101,11 @@ export function QuizSelector({
           {selectedExamConfig && (
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">
-                Selected: {selectedExamConfig.label}
+                Selected: {selectedExamConfig.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                Official exam: {selectedExamConfig.officialQuestionCount}{" "}
-                questions, {selectedExamConfig.officialTimeLimitMinutes} minutes
+                Official exam: {selectedExamConfig.questionCount}{" "}
+                questions, {selectedExamConfig.duration} minutes
               </p>
             </div>
           )}
@@ -128,14 +128,14 @@ export function QuizSelector({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {selectedExamConfig?.practiceQuestionCounts.map((count) => (
-                <SelectItem key={count} value={count.toString()}>
+              {[10, 20, 30, 50, selectedExamConfig?.questionCount].filter(Boolean).map((count) => (
+                <SelectItem key={count} value={count!.toString()}>
                   <div className="flex items-center gap-2">
                     <span>{count} questions</span>
-                    {count === selectedExamConfig.defaultPracticeCount && (
+                    {count === 20 && (
                       <Badge variant="outline">Recommended</Badge>
                     )}
-                    {count === selectedExamConfig.officialQuestionCount && (
+                    {count === selectedExamConfig?.questionCount && (
                       <Badge variant="default">Full Exam</Badge>
                     )}
                   </div>
@@ -144,7 +144,7 @@ export function QuizSelector({
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
-            Estimated time: {estimatedTime.min} - {estimatedTime.max} minutes
+            Estimated time: ~{estimatedTime} minutes
           </p>
         </div>
 

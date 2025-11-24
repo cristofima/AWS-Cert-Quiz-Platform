@@ -1,7 +1,12 @@
 /**
- * Dashboard Layout
- * Main layout for authenticated users with sidebar navigation
- * Features: Responsive design, logout button, navigation menu, session protection
+ * App Shell Layout - Shared Navigation for Protected Routes
+ * 
+ * This layout provides:
+ * - Sidebar navigation for all main app routes
+ * - User info and logout functionality
+ * - Responsive mobile menu
+ * 
+ * Used by: /dashboard, /quiz, /progress, /history
  */
 "use client";
 
@@ -20,7 +25,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface NavItem {
   name: string;
@@ -62,48 +67,20 @@ const navigation: NavItem[] = [
   },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, isLoading, signOut } = useAuth();
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Protect route: redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
-
   const handleLogout = async () => {
     try {
-      await signOut();
-      router.push("/login");
+      await logout();
+      router.push("/auth/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render dashboard if user is not authenticated
-  if (!user) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,54 +122,48 @@ export default function DashboardLayout({
           <div className="border-b p-4">
             <div className="flex items-center space-x-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                {(user?.name || user?.username)?.charAt(0).toUpperCase() || "U"}
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {user?.name || user?.username || "User"}
+                  {user?.email?.split("@")[0] || "User"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.email || ""}
+                  {user?.email || "user@example.com"}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              const isDisabled = item.href === "/settings"; // Coming soon
 
               return (
                 <Link
-                  key={item.name}
-                  href={isDisabled ? "#" : item.href}
-                  onClick={(e) => {
-                    if (isDisabled) {
-                      e.preventDefault();
-                    } else {
-                      setSidebarOpen(false);
-                    }
-                  }}
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : isDisabled
-                      ? "text-muted-foreground cursor-not-allowed opacity-50"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
-                  aria-current={isActive ? "page" : undefined}
-                  aria-disabled={isDisabled}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div>{item.name}</div>
-                    {isDisabled && (
-                      <div className="text-xs opacity-70">Coming soon</div>
-                    )}
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p
+                      className={cn(
+                        "text-xs truncate",
+                        isActive ? "text-primary-foreground/80" : "text-muted-foreground"
+                      )}
+                    >
+                      {item.description}
+                    </p>
                   </div>
                 </Link>
               );
@@ -202,11 +173,11 @@ export default function DashboardLayout({
           {/* Logout button */}
           <div className="border-t p-4">
             <Button
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              variant="outline"
+              className="w-full justify-start"
               onClick={handleLogout}
             >
-              <LogOut className="mr-3 h-5 w-5" />
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
@@ -216,24 +187,24 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background px-4 py-3 lg:hidden">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Target className="h-5 w-5" />
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground">
+              <Target className="h-4 w-4" />
             </div>
             <span className="font-semibold">AWS Quiz</span>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

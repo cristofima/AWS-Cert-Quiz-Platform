@@ -6,15 +6,15 @@ import { useAuth } from "@/lib/auth/auth-context";
 
 export function HomeRedirect() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isInitialized } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && user) {
-      // If user is authenticated, redirect to quiz
-      console.log("User authenticated, redirecting to quiz...");
-      router.push("/quiz");
+    // Only redirect after initialization is complete to avoid race conditions
+    if (isInitialized && user) {
+      // If user is authenticated, redirect to dashboard
+      router.replace("/portal/dashboard");
     }
-  }, [user, isLoading, router]);
+  }, [user, isInitialized, router]);
 
   return null;
 }

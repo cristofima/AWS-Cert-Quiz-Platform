@@ -135,10 +135,10 @@ export default function ProgressPage() {
               Phase 2!
             </p>
             <div className="flex gap-2">
-              <Link href="/quiz" className="flex-1">
+              <Link href="/portal/quiz" className="flex-1">
                 <Button className="w-full">Take Quiz</Button>
               </Link>
-              <Link href="/history" className="flex-1">
+              <Link href="/portal/history" className="flex-1">
                 <Button variant="outline" className="w-full">
                   View History
                 </Button>

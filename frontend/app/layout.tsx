@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import "@/lib/auth/amplify-config"; // Initialize Amplify
+import { AmplifyInitializer } from "@/lib/auth/amplify-initializer";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -46,7 +46,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AmplifyInitializer>
+          <AuthProvider>{children}</AuthProvider>
+        </AmplifyInitializer>
         <Toaster />
       </body>
     </html>
