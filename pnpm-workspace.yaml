@@ -1,0 +1,24 @@
+# pnpm Workspace Configuration
+# This file defines the Lambda functions monorepo with centralized dependency versions
+# Frontend is excluded - it uses pnpm independently with its own package.json versions
+# Learn more: https://pnpm.io/workspaces
+
+packages:
+  # AWS Lambda functions only
+  # Frontend is intentionally excluded to keep catalog focused on shared Lambda dependencies
+  - 'lambdas/*'
+
+# Catalog: Centralized dependency version management for Lambda functions
+# Similar to .NET's Central Package Manager (Directory.Packages.props)
+# Only Lambda packages reference these versions using "catalog:" protocol
+# Frontend maintains its own independent versions in frontend/package.json
+catalog:
+  # AWS SDK - Shared across all 3 Lambda functions
+  '@aws-sdk/client-dynamodb': ^3.679.0
+  '@aws-sdk/util-dynamodb': ^3.679.0
+  '@aws-sdk/client-cognito-identity-provider': ^3.600.0
+  
+  # TypeScript tooling - Shared across all Lambda functions
+  '@types/aws-lambda': ^8.10.145
+  '@types/node': ^20.17.6
+  typescript: ^5.6.3

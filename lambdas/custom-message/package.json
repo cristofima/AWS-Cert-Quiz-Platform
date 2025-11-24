@@ -8,11 +8,11 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@aws-sdk/client-cognito-identity-provider": "^3.600.0"
+    "@aws-sdk/client-cognito-identity-provider": "catalog:"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.145",
-    "@types/node": "^20.14.0",
-    "typescript": "^5.5.2"
+    "@types/aws-lambda": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

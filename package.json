@@ -1,0 +1,36 @@
+{
+  "name": "aws-cert-quiz-platform",
+  "version": "1.0.0",
+  "description": "AWS Certification Quiz Platform - Lambda workspace with centralized dependencies, frontend uses pnpm independently",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cristofima/AWS-Cert-Quiz-Platform.git"
+  },
+  "keywords": [
+    "aws",
+    "certification",
+    "quiz",
+    "next.js",
+    "lambda",
+    "monorepo",
+    "pnpm-workspace"
+  ],
+  "author": "Cristopher Coronado",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cd frontend && pnpm dev",
+    "build": "cd frontend && pnpm build",
+    "start": "cd frontend && pnpm start",
+    "lint": "cd frontend && pnpm lint",
+    "build:lambdas": "pwsh ./scripts/build-lambdas.ps1",
+    "install:all": "pnpm install && cd frontend && pnpm install",
+    "clean": "pnpm --recursive exec -- rm -rf node_modules dist && cd frontend && rm -rf node_modules .next",
+    "clean:lambdas": "pnpm --filter './lambdas/*' exec -- rm -rf node_modules dist"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

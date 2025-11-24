@@ -9,13 +9,13 @@
     "package": "npm run build && zip -r score-calculator.zip dist node_modules"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.679.0",
-    "@aws-sdk/util-dynamodb": "^3.679.0"
+    "@aws-sdk/client-dynamodb": "catalog:",
+    "@aws-sdk/util-dynamodb": "catalog:"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.145",
-    "@types/node": "^20.17.6",
-    "typescript": "^5.6.3"
+    "@types/aws-lambda": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=20.0.0"

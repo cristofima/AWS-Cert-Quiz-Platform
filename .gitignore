@@ -128,16 +128,18 @@ ENV/
 env/
 
 # Node.js (global - frontend has its own node_modules and logs)
-# Only top-level node_modules if accidentally created
+# Workspace root node_modules (pnpm hoists here)
 /node_modules/
 .npm
-.yarn-integrity
 
-# Package manager lock files (optional - some teams commit these)
-# Uncomment if you want to ignore them globally
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# pnpm specific
+.pnpm-debug.log*
+
+# Package manager lock files
+# IMPORTANT: pnpm-lock.yaml should be committed for reproducible builds
+# package-lock.json and yarn.lock are ignored (not used in this project)
+package-lock.json
+yarn.lock
 
 # Logs
 logs/
