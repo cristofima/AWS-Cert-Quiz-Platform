@@ -1,0 +1,5 @@
+# Frontend is NOT a workspace
+# This empty file prevents pnpm from looking for parent workspace
+# Frontend uses pnpm independently with its own package.json versions
+
+packages: []
